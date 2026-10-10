@@ -1,4 +1,5 @@
-from campusflow.tickets import create_ticket, find_ticket, list_tickets
+
+from campusflow.tickets import create_ticket, find_ticket
 from campusflow.storage import load_tickets, save_tickets
 from campusflow.workflow import assign_ticket, update_status
 from campusflow.queue import get_open_tickets, sort_by_priority
@@ -32,8 +33,11 @@ def main():
                 print(f"Error: {e}")
                 
         elif choice == "2":
-            for t in list_tickets(tickets):
-                print(f"{t['id']} | {t['title']} | {t['priority']} | {t['status']} | {t['assigned_to']}")
+            if not tickets:
+                print("No tickets")
+            else:
+                for t in tickets:
+                    print(f"{t['id']} | {t['title']} | {t['priority']} | {t['status']} | {t['assigned_to']}")
                 
         elif choice == "3":
             tid = input("Ticket ID: ")
