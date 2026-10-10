@@ -1,13 +1,18 @@
-
 from campusflow.tickets import create_ticket, find_ticket
 from campusflow.storage import load_tickets, save_tickets
-from campusflow.workflow import assign_ticket, update_status
-from campusflow.queue import get_open_tickets, sort_by_priority
-from campusflow.reports import generate_report
+from campusflow.workflow import assign_ticket, update_ticket_status
+from campusflow.queue import get_open_tickets, get_assigned_tickets, sort_tickets_by_priority
+from campusflow.reports import (
+    get_ticket_summary,
+    count_tickets_by_status,
+    count_tickets_by_priority,
+    count_tickets_by_category,
+    count_assignment_status
+)
 
 def main():
     tickets = load_tickets()
-    print("=== CampusFlow Helpdesk ===")
+    print("=== CampusFlow Helpdesk - Final Project F1-F7 ===")
     
     while True:
         print("\n1. Create ticket (F1)")
@@ -17,7 +22,7 @@ def main():
         print("5. Update status (F4)")
         print("6. Show priority queue (F5)")
         print("7. Reports (F6)")
-        print("8. Save & Exit")
+        print("8. Save & Exit (F7)")
         
         choice = input("Choice: ").strip()
         
@@ -37,16 +42,16 @@ def main():
                 print("No tickets")
             else:
                 for t in tickets:
-                    print(f"{t['id']} | {t['title']} | {t['priority']} | {t['status']} | {t['assigned_to']}")
+                    print(f"{t['id']} | {t['title']} | {t['priority']} | {t['status']} | assigned={t.get('assigned_to')}")
                 
         elif choice == "3":
-            tid = input("Ticket ID: ")
+            tid = input("Ticket ID: ").strip()
             t = find_ticket(tickets, tid)
             print(t if t else "Not found")
             
         elif choice == "4":
-            tid = input("Ticket ID: ")
-            staff = input("Assign to: ")
+            tid = input("Ticket ID: ").strip()
+            staff = input("Assign to: ").strip()
             try:
                 assign_ticket(tickets, tid, staff)
                 print("Assigned")
@@ -54,27 +59,34 @@ def main():
                 print(f"Error: {e}")
                 
         elif choice == "5":
-            tid = input("Ticket ID: ")
-            status = input("New status (open/in_progress/resolved): ")
+            tid = input("Ticket ID: ").strip()
+            status = input("New status (open/in_progress/resolved): ").strip()
             try:
-                update_status(tickets, tid, status)
+                update_ticket_status(tickets, tid, status)
                 print("Status updated")
             except Exception as e:
                 print(f"Error: {e}")
                 
         elif choice == "6":
             open_t = get_open_tickets(tickets)
-            sorted_t = sort_by_priority(open_t)
+            sorted_t = sort_tickets_by_priority(open_t)
+            print(f"--- OPEN QUEUE ({len(sorted_t)} tickets) sorted by priority ---")
             for t in sorted_t:
                 print(f"{t['priority'].upper():8} | {t['id']} | {t['title']} | {t['affected_users']} users")
                 
         elif choice == "7":
-            report = generate_report(tickets)
-            print(report)
+            print("\n=== REPORTS (F6) ===")
+            print(f"Total: {len(tickets)}")
+            print("By Status:", count_tickets_by_status(tickets))
+            print("By Priority:", count_tickets_by_priority(tickets))
+            print("By Category:", count_tickets_by_category(tickets))
+            print("Assignment:", count_assignment_status(tickets))
+            print("\nSummary:")
+            print(get_ticket_summary(tickets))
             
         elif choice == "8":
             save_tickets(tickets)
-            print(f"Saved {len(tickets)} tickets. Bye!")
+            print(f"Saved {len(tickets)} tickets to data/tickets.json. Bye!")
             break
 
 if __name__ == "__main__":
