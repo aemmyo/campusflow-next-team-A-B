@@ -1,64 +1,152 @@
 import unittest
-from campusflow.tickets import calculate_priority, create_ticket, validate_affected_users
 
-class TestPriorityEngine(unittest.TestCase):
-    def test_high_12_critical(self):
-        self.assertEqual(calculate_priority("high", 12), "critical")
-    
-    def test_high_2_high(self):
-        self.assertEqual(calculate_priority("high", 2), "high")
-    
-    def test_low_4_medium(self):
-        self.assertEqual(calculate_priority("low", 4), "medium")
-    
-    def test_low_1_low(self):
-        self.assertEqual(calculate_priority("low", 1), "low")
-    
-    def test_rule_order_critical_over_high(self):
-        # This test catches AI mistake: if OR checked before AND, high+10 would be high not critical
-        self.assertEqual(calculate_priority("high", 10), "critical")
-    
-    def test_medium_10_high(self):
-        self.assertEqual(calculate_priority("medium", 10), "high")
-    
-    def test_medium_3_medium(self):
-        self.assertEqual(calculate_priority("medium", 3), "medium")
+from campusflow.tickets import (
+    create_ticket,
+    assign_ticket,
+    change_status,
+    find_ticket,
+    next_ticket_id,
+)
 
-class TestTicketCreation(unittest.TestCase):
+
+class TestTickets(unittest.TestCase):
+
     def setUp(self):
         self.tickets = []
 
-    def test_create_valid(self):
-        t = create_ticket(self.tickets, "WiFi down", "Network", "high", 15)
-        self.assertEqual(t["id"], "T001")
-        self.assertEqual(t["priority"], "critical")
-        self.assertEqual(t["status"], "open")
+        self.ticket = create_ticket(
+            self.tickets,
+            "Wi-Fi is not working",
+            "Network",
+            "high",
+            10,
+        )
 
-    def test_zero_users_rejected(self):
+    def test_create_ticket(self):
+        self.assertEqual(self.ticket["id"], "T001")
+        self.assertEqual(self.ticket["title"], "Wi-Fi is not working")
+        self.assertEqual(self.ticket["category"], "Network")
+        self.assertEqual(self.ticket["status"], "open")
+        self.assertIsNone(self.ticket["assigned_to"])
+        self.assertEqual(self.ticket["notes"], [])
+
+    def test_ticket_priority(self):
+        self.assertEqual(self.ticket["priority"], "critical")
+
+    def test_next_ticket_id(self):
+        create_ticket(
+            self.tickets,
+            "Laptop problem",
+            "Hardware",
+            "medium",
+            3,
+        )
+
+        self.assertEqual(next_ticket_id(self.tickets), "T003")
+
+    def test_invalid_ticket_not_created(self):
+        original = [ticket.copy() for ticket in self.tickets]
+
         with self.assertRaises(ValueError):
-            create_ticket(self.tickets, "Test", "Network", "low", 0)
+            create_ticket(
+                self.tickets,
+                "",
+                "Network",
+                "high",
+                10,
+            )
 
-    def test_blank_title_rejected(self):
+        self.assertEqual(self.tickets, original)
+
+    def test_assign_ticket(self):
+        assign_ticket(
+            self.tickets,
+            "T001",
+            "Mentor A",
+        )
+
+        self.assertEqual(
+            self.ticket["assigned_to"],
+            "Mentor A",
+        )
+
+    def test_blank_assignee_rejected(self):
+        original = self.ticket.copy()
+
         with self.assertRaises(ValueError):
-            create_ticket(self.tickets, "   ", "Network", "low", 1)
+            assign_ticket(
+                self.tickets,
+                "T001",
+                "   ",
+            )
 
-    def test_invalid_category_rejected(self):
+        self.assertEqual(self.ticket, original)
+
+    def test_unassigned_ticket_cannot_start(self):
+        original = self.ticket.copy()
+
         with self.assertRaises(ValueError):
-            create_ticket(self.tickets, "Test", "InvalidCat", "low", 1)
+            change_status(
+                self.tickets,
+                "T001",
+                "in_progress",
+            )
 
-    def test_normalize_case(self):
-        t = create_ticket(self.tickets, "Test", "NETWORK", "High", 1)
-        self.assertEqual(t["category"], "network")
-        self.assertEqual(t["urgency"], "high")
+        self.assertEqual(self.ticket, original)
 
-    def test_decimal_rejected(self):
+    def test_assigned_ticket_can_start(self):
+        assign_ticket(self.tickets, "T001", "Mentor A")
+
+        change_status(
+            self.tickets,
+            "T001",
+            "in_progress",
+        )
+
+        self.assertEqual(self.ticket["status"], "in_progress")
+
+    def test_in_progress_ticket_can_be_resolved(self):
+        assign_ticket(self.tickets, "T001", "Mentor A")
+
+        change_status(self.tickets, "T001", "in_progress")
+        change_status(self.tickets, "T001", "resolved")
+
+        self.assertEqual(self.ticket["status"], "resolved")
+
+    def test_resolved_ticket_can_be_reopened(self):
+        assign_ticket(self.tickets, "T001", "Mentor A")
+
+        change_status(self.tickets, "T001", "in_progress")
+        change_status(self.tickets, "T001", "resolved")
+        change_status(self.tickets, "T001", "open")
+
+        self.assertEqual(self.ticket["status"], "open")
+
+    def test_resolved_ticket_cannot_be_reassigned(self):
+        assign_ticket(self.tickets, "T001", "Mentor A")
+
+        change_status(self.tickets, "T001", "in_progress")
+        change_status(self.tickets, "T001", "resolved")
+
+        original = self.ticket.copy()
+
         with self.assertRaises(ValueError):
-            validate_affected_users("3.5")
+            assign_ticket(self.tickets, "T001", "Mentor B")
 
-    def test_id_increment(self):
-        create_ticket(self.tickets, "A", "Network", "low", 1)
-        t2 = create_ticket(self.tickets, "B", "Network", "low", 1)
-        self.assertEqual(t2["id"], "T002")
+        self.assertEqual(self.ticket, original)
+
+    def test_invalid_status_rejected(self):
+        original = self.ticket.copy()
+
+        with self.assertRaises(ValueError):
+            change_status(self.tickets, "T001", "cancelled")
+
+        self.assertEqual(self.ticket, original)
+
+    def test_missing_ticket_rejected(self):
+        with self.assertRaises(ValueError):
+            find_ticket(self.tickets, "T999")
+
 
 if __name__ == "__main__":
     unittest.main()

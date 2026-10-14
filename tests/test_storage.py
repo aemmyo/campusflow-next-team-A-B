@@ -1,64 +1,175 @@
-import unittest
-import os
 import json
-from campusflow.storage import load_tickets, save_tickets
-from campusflow.tickets import create_ticket
+import tempfile
+import unittest
+
+from pathlib import Path
+
+from campusflow.tickets import create_ticket, next_ticket_id
+from campusflow.notes import add_note, next_note_id
+from campusflow.storage import save_tickets, load_tickets
+
 
 class TestStorage(unittest.TestCase):
+
     def setUp(self):
-        self.path = "data/test_tickets.json"
-        # Ensure clean
-        if os.path.exists(self.path):
-            os.remove(self.path)
+        self.temp_directory = tempfile.TemporaryDirectory()
 
-    def tearDown(self):
-        if os.path.exists(self.path):
-            os.remove(self.path)
+        self.addCleanup(self.temp_directory.cleanup)
 
-    def test_missing_file_returns_empty(self):
-        # Fresh start — file doesn't exist -> []
-        result = load_tickets("data/does_not_exist.json")
-        self.assertEqual(result, [])
+        self.path = (
+            Path(self.temp_directory.name) / "tickets.json"
+        )
 
-    def test_save_and_reload(self):
-        tickets = []
-        create_ticket(tickets, "WiFi down", "Network", "high", 5)
-        save_tickets(tickets, self.path)
-        loaded = load_tickets(self.path)
-        self.assertEqual(len(loaded), 1)
-        self.assertEqual(loaded[0]["id"], "T001")
+        self.tickets = []
 
-    def test_malformed_json_raises(self):
-        # Create corrupted file
-        os.makedirs("data", exist_ok=True)
-        with open(self.path, "w") as f:
-            f.write("{ bad json")
-        with self.assertRaises(ValueError) as ctx:
+        self.ticket = create_ticket(
+            self.tickets,
+            "Wi-Fi is not working",
+            "Network",
+            "high",
+            10,
+        )
+
+    def test_save_tickets_creates_file(self):
+        save_tickets(self.tickets, self.path)
+
+        self.assertTrue(self.path.exists())
+
+    def test_saved_file_contains_ticket(self):
+        save_tickets(self.tickets, self.path)
+
+        with self.path.open(encoding="utf-8") as file:
+            saved_data = json.load(file)
+
+        self.assertEqual(len(saved_data), 1)
+        self.assertEqual(saved_data[0]["id"], "T001")
+
+    def test_load_tickets(self):
+        save_tickets(self.tickets, self.path)
+
+        loaded_tickets = load_tickets(self.path)
+
+        self.assertEqual(loaded_tickets, self.tickets)
+
+    def test_notes_survive_save_and_load(self):
+        add_note(
+            self.tickets,
+            "T001",
+            "Mentor A",
+            "Router reboot attempted",
+        )
+
+        save_tickets(self.tickets, self.path)
+
+        loaded_tickets = load_tickets(self.path)
+
+        self.assertEqual(
+            loaded_tickets[0]["notes"][0]["note_id"],
+            "N001",
+        )
+
+        self.assertEqual(
+            loaded_tickets[0]["notes"][0]["message"],
+            "Router reboot attempted",
+        )
+
+    def test_next_ticket_id_after_loading(self):
+        create_ticket(
+            self.tickets,
+            "Laptop problem",
+            "Hardware",
+            "medium",
+            3,
+        )
+
+        save_tickets(self.tickets, self.path)
+
+        loaded_tickets = load_tickets(self.path)
+
+        self.assertEqual(next_ticket_id(loaded_tickets), "T003")
+
+    def test_next_note_id_after_loading(self):
+        add_note(
+            self.tickets,
+            "T001",
+            "Mentor A",
+            "Router reboot attempted",
+        )
+
+        save_tickets(self.tickets, self.path)
+
+        loaded_tickets = load_tickets(self.path)
+
+        self.assertEqual(
+            next_note_id(loaded_tickets[0]),
+            "N002",
+        )
+
+    def test_corrupt_json_rejected(self):
+        self.path.write_text(
+            "{invalid json",
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(ValueError):
             load_tickets(self.path)
-        self.assertIn("Malformed JSON", str(ctx.exception))
 
-    def test_id_unique_after_reload(self):
-        tickets = []
-        create_ticket(tickets, "A", "Network", "low", 1) # T001
-        create_ticket(tickets, "B", "Network", "low", 1) # T002
-        save_tickets(tickets, self.path)
+    def test_duplicate_ticket_ids_rejected(self):
+        duplicate = self.ticket.copy()
+        duplicate["notes"] = []
 
-        loaded = load_tickets(self.path)
-        # Next ticket after reload should be T003, not T001 again
-        t3 = create_ticket(loaded, "C", "Network", "low", 1)
-        self.assertEqual(t3["id"], "T003")
+        self.path.write_text(
+            json.dumps([self.ticket, duplicate]),
+            encoding="utf-8",
+        )
 
-    def test_save_creates_data_dir(self):
-        path = "data/new_folder/tickets.json"
-        if os.path.exists(path):
-            os.remove(path)
-        tickets = []
-        create_ticket(tickets, "Test", "Other", "low", 1)
-        save_tickets(tickets, path)
-        self.assertTrue(os.path.exists(path))
-        # cleanup
-        os.remove(path)
-        os.rmdir("data/new_folder")
+        with self.assertRaises(ValueError):
+            load_tickets(self.path)
+
+    def test_duplicate_note_ids_rejected(self):
+        self.ticket["notes"] = [
+            {
+                "note_id": "N001",
+                "author": "Mentor A",
+                "message": "Router reboot attempted",
+            },
+            {
+                "note_id": "N001",
+                "author": "Mentor B",
+                "message": "Checking the network switch",
+            },
+        ]
+
+        with self.assertRaises(ValueError):
+            save_tickets(self.tickets, self.path)
+
+    def test_invalid_status_rejected_during_load(self):
+        invalid_ticket = self.ticket.copy()
+        invalid_ticket["status"] = "cancelled"
+
+        self.path.write_text(
+            json.dumps([invalid_ticket]),
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(ValueError):
+            load_tickets(self.path)
+
+    def test_failed_load_does_not_change_existing_collection(self):
+        existing_tickets = [
+            ticket.copy() for ticket in self.tickets
+        ]
+
+        self.path.write_text(
+            "{invalid json",
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(ValueError):
+            load_tickets(self.path)
+
+        self.assertEqual(self.tickets, existing_tickets)
+
 
 if __name__ == "__main__":
     unittest.main()

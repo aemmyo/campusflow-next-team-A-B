@@ -1,28 +1,108 @@
-"""
-Shared: JSON persistence, owned by Engineer A
-"""
 import json
 import os
+import tempfile
+from pathlib import Path
 
-DEFAULT_PATH = "data/tickets.json"
+from campusflow.validation import validate_ticket_collection
 
-def load_tickets(path=DEFAULT_PATH):
-    """Load tickets from JSON. Handles missing file and malformed JSON."""
-    if not os.path.exists(path):
-        # Missing file = fresh start, not error
-        return []
+
+def save_tickets(tickets, path):
+    """
+    Validate and save tickets to a JSON file.
+
+    Existing JSON files using either a list or a
+    {"tickets": [...]} envelope retain their format.
+    New files use a list.
+    """
+
+    validate_ticket_collection(tickets)
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Preserve the existing file's format where possible.
+    envelope = False
+
+    if path.exists():
+        try:
+            with path.open("r", encoding="utf-8") as file:
+                existing_data = json.load(file)
+
+            envelope = (
+                isinstance(existing_data, dict)
+                and set(existing_data.keys()) == {"tickets"}
+                and isinstance(existing_data["tickets"], list)
+            )
+
+        except (OSError, json.JSONDecodeError):
+            # A malformed old file must not prevent saving
+            # the currently validated collection.
+            envelope = False
+
+    data = {"tickets": tickets} if envelope else tickets
+
+    # Write a temporary file first, then replace the target.
+    temporary_path = None
+
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError("Tickets file must contain a list")
-            return data
-    except json.JSONDecodeError as e:
-        # Malformed JSON = clear error, DO NOT silently erase data
-        raise ValueError(f"Malformed JSON in {path}: {e}. Data not erased; fix file or delete to start fresh.") from e
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            delete=False,
+        ) as file:
+            temporary_path = Path(file.name)
 
-def save_tickets(tickets, path=DEFAULT_PATH):
-    """Save tickets to JSON, creating data/ folder if needed."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(tickets, f, indent=2)
+            json.dump(
+                data,
+                file,
+                indent=4,
+                ensure_ascii=False,
+            )
+
+            file.flush()
+            os.fsync(file.fileno())
+
+        os.replace(temporary_path, path)
+
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+
+
+def load_tickets(path):
+    """
+    Load and validate the entire collection.
+
+    Returns a new list. Does not modify an existing
+    in-memory ticket collection.
+    """
+
+    path = Path(path)
+
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "The ticket file contains invalid JSON."
+        ) from error
+
+    if isinstance(data, dict):
+        if set(data.keys()) != {"tickets"}:
+            raise ValueError("Invalid JSON envelope.")
+
+        data = data["tickets"]
+
+    # Validate everything before returning any records.
+    try:
+        validate_ticket_collection(data)
+
+    except (ValueError, TypeError, KeyError) as error:
+        raise ValueError(
+            f"Ticket file failed validation: {error}"
+        ) from error
+
+    # Give the application its own collection of dictionaries.
+    return json.loads(json.dumps(data))
