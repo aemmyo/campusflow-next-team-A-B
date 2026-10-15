@@ -1,10 +1,11 @@
 """Ticket search, filtering, and sorting for CampusFlow."""
 
-from campusflow.tickets import ALLOWED_CATEGORIES, PRIORITY_ORDER
-
-
-ALLOWED_STATUSES = ["open", "in_progress", "resolved"]
-
+from campusflow.validation import (
+    ALLOWED_CATEGORIES,
+    ALLOWED_PRIORITIES,
+    ALLOWED_STATUSES,
+)
+from campusflow.tickets import PRIORITY_ORDER
 
 def search_tickets(
     tickets,
@@ -27,10 +28,13 @@ def search_tickets(
     priority = priority.strip().lower() if priority else ""
 
     # Validate category.
-    if category and category not in ALLOWED_CATEGORIES:
+    if category and category not in {
+        item.casefold() for item in ALLOWED_CATEGORIES
+    }:
+        allowed_categories = ", ".join(sorted(ALLOWED_CATEGORIES))
         raise ValueError(
             f"Invalid category '{category}'. "
-            f"Allowed categories: {', '.join(ALLOWED_CATEGORIES)}"
+            f"Allowed categories: {allowed_categories}"
         )
 
     # Validate status.
@@ -41,10 +45,10 @@ def search_tickets(
         )
 
     # Validate priority.
-    if priority and priority not in PRIORITY_ORDER:
+    if priority and priority not in ALLOWED_PRIORITIES:
         raise ValueError(
             f"Invalid priority '{priority}'. "
-            f"Allowed priorities: {', '.join(PRIORITY_ORDER)}"
+            f"Allowed priorities: {', '.join(sorted(ALLOWED_PRIORITIES))}"
         )
 
     results = []
