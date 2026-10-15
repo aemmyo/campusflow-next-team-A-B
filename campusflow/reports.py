@@ -2,9 +2,30 @@
 
 
 def get_ticket_summary(tickets):
-    """Return the total number of tickets."""
+    """Return ticket totals, unresolved tickets, and resolution percentage."""
+
+    total = len(tickets)
+
+    resolved = sum(
+        1 for ticket in tickets
+        if ticket.get("status", "").lower() == "resolved"
+    )
+
+    unresolved = sum(
+        1 for ticket in tickets
+        if ticket.get("status", "").lower() in ("open", "in_progress")
+    )
+
+    if total == 0:
+        resolution_percentage = 0.0
+    else:
+        resolution_percentage = (resolved / total) * 100
+
     return {
-        "total": len(tickets),
+        "total": total,
+        "unresolved": unresolved,
+        "resolved": resolved,
+        "resolution_percentage": round(resolution_percentage, 2),
     }
 
 
