@@ -40,6 +40,47 @@ class TestTicketAssignment(unittest.TestCase):
         with self.assertRaises(ValueError):
             assign_ticket(self.tickets, "T001", 123)
 
+    def test_resolved_ticket_cannot_be_reassigned(self):
+        # Assign the ticket before starting work.
+        assign_ticket(self.tickets, "T001", "Felix")
+
+        update_ticket_status(self.tickets, "T001", "in_progress")
+        update_ticket_status(self.tickets, "T001", "resolved")
+
+        original_assignee = self.tickets[0]["assigned_to"]
+
+        # Reassignment must fail for a resolved ticket.
+        with self.assertRaises(ValueError):
+            assign_ticket(
+                self.tickets,
+                "T001",
+                "Another Staff Member",
+            )
+
+        # The failed operation must not change the assignment.
+        self.assertEqual(
+            self.tickets[0]["assigned_to"],
+            original_assignee,
+        )
+
+    def test_resolved_ticket_can_be_reassigned_after_reopening(self):
+        assign_ticket(self.tickets, "T001", "Felix")
+
+        update_ticket_status(self.tickets, "T001", "in_progress")
+        update_ticket_status(self.tickets, "T001", "resolved")
+        update_ticket_status(self.tickets, "T001", "open")
+
+        ticket = assign_ticket(
+            self.tickets,
+            "T001",
+            "Another Staff Member",
+        )
+
+        self.assertEqual(
+            ticket["assigned_to"],
+            "Another Staff Member",
+        )
+
 
 class TestTicketStatusWorkflow(unittest.TestCase):
 
@@ -54,7 +95,6 @@ class TestTicketStatusWorkflow(unittest.TestCase):
             5,
         )
 
-        # Assign a staff member so the ticket can enter in_progress.
         assign_ticket(self.tickets, "T001", "Felix")
 
     def test_open_ticket_moves_to_in_progress(self):
@@ -125,7 +165,9 @@ class TestTicketStatusWorkflow(unittest.TestCase):
 
     def test_unknown_ticket_is_rejected(self):
         with self.assertRaises(ValueError):
-            update_ticket_status(self.tickets, "T999", "in_progress")
+            update_ticket_status(
+                self.tickets, "T999", "in_progress"
+            )
 
     def test_status_is_case_insensitive(self):
         ticket = update_ticket_status(
