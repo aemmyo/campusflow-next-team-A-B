@@ -1,11 +1,13 @@
 from campusflow.tickets import (
     create_ticket,
     find_ticket,
-    ALLOWED_CATEGORIES,
     PRIORITY_ORDER,
 )
+
+from campusflow.validation import ALLOWED_CATEGORIES
 from campusflow.storage import load_tickets, save_tickets
 from campusflow.workflow import assign_ticket, update_ticket_status
+from campusflow.notes import add_note, get_notes
 from campusflow.queue import (
     get_open_tickets,
     get_assigned_tickets,
@@ -22,6 +24,8 @@ from campusflow.reports import (
     count_tickets_by_category,
     count_assignment_status,
 )
+
+DATA_FILE = "data/tickets.json"
 
 
 ALLOWED_STATUSES = ["open", "in_progress", "resolved"]
@@ -120,10 +124,51 @@ def search_menu(tickets):
         print(f"Search error: {error}")
 
 
-def main():
-    tickets = load_tickets()
+def add_note_menu(tickets):
+    """Prompt the user to add a note to a ticket."""
 
-    print("=== CampusFlow Helpdesk ===")
+    ticket_id = input("Enter ticket ID: ").strip()
+    author = input("Enter your name: ")
+    message = input("Enter your note (5–300 characters): ")
+
+    try:
+        note = add_note(tickets, ticket_id, author, message)
+        print(f"Note {note['note_id']} added successfully.")
+
+    except ValueError as error:
+        print(f"Error: {error}")
+
+
+def view_notes_menu(tickets):
+    """Display notes belonging to a ticket."""
+
+    ticket_id = input("Enter ticket ID: ").strip()
+
+    try:
+        notes = get_notes(tickets, ticket_id)
+
+        if not notes:
+            print("This ticket has no notes.")
+            return
+
+        print(f"\nNotes for ticket {ticket_id}:")
+
+        for note in notes:
+            print(f"\nNote ID: {note['note_id']}")
+            print(f"Author: {note['author']}")
+            print(f"Message: {note['message']}")
+
+    except ValueError as error:
+        print(f"Error: {error}")
+
+        
+def main():
+    try:
+        tickets = load_tickets(DATA_FILE)
+    except FileNotFoundError:
+        tickets = []
+
+        print("=== CampusFlow Helpdesk ===")
 
     while True:
         print("\n1. Create ticket")
@@ -134,7 +179,9 @@ def main():
         print("6. Show priority queue")
         print("7. Reports")
         print("8. Search tickets")
-        print("9. Save & Exit")
+        print("9. Add a note")
+        print("10. View ticket notes")
+        print("11. Save & Exit")
 
         choice = input("Choice: ").strip()
 
@@ -238,7 +285,13 @@ def main():
             search_menu(tickets)
 
         elif choice == "9":
-            save_tickets(tickets)
+            add_note_menu(tickets)
+
+        elif choice == "10":
+            view_notes_menu(tickets)
+
+        elif choice == "11":
+            save_tickets(tickets, DATA_FILE)
             print(
                 f"Saved {len(tickets)} tickets to "
                 "data/tickets.json. Bye!"
@@ -246,7 +299,10 @@ def main():
             break
 
         else:
-            print("Invalid menu choice. Please enter a number from 1 to 9.")
+            print(
+                "Invalid menu choice. "
+                "Please enter a number from 1 to 11."
+            )
 
 
 if __name__ == "__main__":
