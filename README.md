@@ -101,6 +101,7 @@ Run the complete test suite:
 
 ## Documentation
 
-- `docs/design-decisions.md`: Documents key design decisions.
-- `docs/ai-learning-log.md`: Engineer A's AI learning log.
-- `docs/ai-learning-log-engineer-b.md`: Engineer B's AI learning log.
+- `docs/design-decisions.md`: Documents key design decisions and implementation rationale.
+- `docs/baseline-check.md`: Records the baseline reliability audit and findings.
+- `docs/ai-learning-log.md`: Shared AI learning log containing Engineer A's and Engineer B's entries.
+- `docs/ai-learning-log-engineer-b.md`: Engineer B's earlier summary of AI-assisted development interactions.
