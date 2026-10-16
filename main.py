@@ -8,6 +8,7 @@ from campusflow.validation import ALLOWED_CATEGORIES
 from campusflow.storage import load_tickets, save_tickets
 from campusflow.workflow import assign_ticket, update_ticket_status
 from campusflow.notes import add_note, get_notes
+from campusflow.quiz import run_quiz
 from campusflow.queue import (
     get_open_tickets,
     get_assigned_tickets,
@@ -181,7 +182,8 @@ def main():
         print("8. Search tickets")
         print("9. Add a note")
         print("10. View ticket notes")
-        print("11. Save & Exit")
+        print("11. Engineering Understanding Check")
+        print("12. Save & Exit")
 
         choice = input("Choice: ").strip()
 
@@ -291,6 +293,9 @@ def main():
             view_notes_menu(tickets)
 
         elif choice == "11":
+            run_quiz()
+
+        elif choice == "12":
             save_tickets(tickets, DATA_FILE)
             print(
                 f"Saved {len(tickets)} tickets to "
@@ -301,7 +306,7 @@ def main():
         else:
             print(
                 "Invalid menu choice. "
-                "Please enter a number from 1 to 11."
+                "Please enter a number from 1 to 12."
             )
 
 
