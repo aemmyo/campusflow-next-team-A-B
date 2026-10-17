@@ -35,6 +35,8 @@ ALLOWED_STATUSES = ["open", "in_progress", "resolved"]
 def ask_filter(prompt, allowed_values):
     """Ask for an optional filter and retry invalid choices."""
 
+    normalized_values = [value.lower() for value in allowed_values]
+
     while True:
         value = input(prompt).strip().lower()
 
@@ -42,7 +44,7 @@ def ask_filter(prompt, allowed_values):
         if not value:
             return ""
 
-        if value in allowed_values:
+        if value in normalized_values:
             return value
 
         print(
@@ -164,12 +166,19 @@ def view_notes_menu(tickets):
 
         
 def main():
+    # Load saved tickets when the application starts.
     try:
         tickets = load_tickets(DATA_FILE)
+
     except FileNotFoundError:
         tickets = []
+        print("No saved tickets found. Starting with an empty collection.")
 
-        print("=== CampusFlow Helpdesk ===")
+    except (ValueError, OSError) as error:
+        print(f"Could not load tickets: {error}")
+        return
+
+    print("=== CampusFlow Helpdesk ===")
 
     while True:
         print("\n1. Create ticket")
