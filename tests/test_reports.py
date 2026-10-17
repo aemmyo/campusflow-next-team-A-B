@@ -72,7 +72,16 @@ class TestTicketReports(unittest.TestCase):
         self.assertEqual(result["unassigned"], 1)
 
     def test_empty_ticket_list(self):
-        self.assertEqual(get_ticket_summary([]), {"total": 0})
+        self.assertEqual(
+            get_ticket_summary([]),
+            {
+                "total": 0,
+                "unresolved": 0,
+                "resolved": 0,
+                "resolution_percentage": 0.0,
+            },
+        )
+
         self.assertEqual(count_tickets_by_status([]), {})
         self.assertEqual(count_tickets_by_priority([]), {})
         self.assertEqual(count_tickets_by_category([]), {})
