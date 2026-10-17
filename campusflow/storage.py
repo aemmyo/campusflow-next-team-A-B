@@ -15,12 +15,13 @@ def save_tickets(tickets, path):
     New files use a list.
     """
 
+    # Validate tickets before saving.
     validate_ticket_collection(tickets)
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Preserve the existing file's format where possible.
+    # Preserve the existing file format where possible.
     envelope = False
 
     if path.exists():
@@ -41,7 +42,7 @@ def save_tickets(tickets, path):
 
     data = {"tickets": tickets} if envelope else tickets
 
-    # Write a temporary file first, then replace the target.
+    # Write to a temporary file before replacing the target.
     temporary_path = None
 
     try:
@@ -63,18 +64,20 @@ def save_tickets(tickets, path):
             file.flush()
             os.fsync(file.fileno())
 
+        # Replace the target only after writing succeeds.
         os.replace(temporary_path, path)
 
     finally:
+        # Remove the temporary file if it still exists.
         if temporary_path is not None and temporary_path.exists():
             temporary_path.unlink()
 
 
 def load_tickets(path):
     """
-    Load and validate the entire collection.
+    Load and validate the entire ticket collection.
 
-    Returns a new list. Does not modify an existing
+    Returns a new list and does not modify an existing
     in-memory ticket collection.
     """
 
@@ -95,7 +98,7 @@ def load_tickets(path):
 
         data = data["tickets"]
 
-    # Validate everything before returning any records.
+    # Validate the complete collection before returning it.
     try:
         validate_ticket_collection(data)
 
@@ -104,5 +107,5 @@ def load_tickets(path):
             f"Ticket file failed validation: {error}"
         ) from error
 
-    # Give the application its own collection of dictionaries.
+    # Return an independent copy of the loaded data.
     return json.loads(json.dumps(data))
