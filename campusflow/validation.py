@@ -36,6 +36,13 @@ REQUIRED_TICKET_FIELDS = {
     "notes",
 }
 
+# Keep the allowed status transitions in one place.
+ALLOWED_TRANSITIONS = {
+    "open": {"in_progress"},
+    "in_progress": {"open", "resolved"},
+    "resolved": {"open"},
+}
+
 
 def validate_title(title):
     if not isinstance(title, str) or not title.strip():
@@ -46,9 +53,11 @@ def validate_category(category):
     if not isinstance(category, str):
         raise ValueError("Category must be text.")
 
-    if category.strip().casefold() not in {
+    allowed_categories = {
         item.casefold() for item in ALLOWED_CATEGORIES
-    }:
+    }
+
+    if category.strip().casefold() not in allowed_categories:
         raise ValueError("Invalid ticket category.")
 
 
@@ -70,7 +79,7 @@ def validate_urgency(urgency):
 
 def validate_affected_users(affected_users):
     # bool is a subclass of int in Python.
-    # Using type(...) is int rejects True and False.
+    # type(...) is int rejects True and False.
     if type(affected_users) is not int or affected_users <= 0:
         raise ValueError(
             "Affected users must be a positive integer."
@@ -80,6 +89,39 @@ def validate_affected_users(affected_users):
 def validate_assignment(staff):
     if not isinstance(staff, str) or not staff.strip():
         raise ValueError("Staff name cannot be empty.")
+
+
+def validate_status(status):
+    if not isinstance(status, str):
+        raise ValueError("Status must be a string.")
+
+    status = status.strip().lower()
+
+    if status not in ALLOWED_STATUSES:
+        raise ValueError(f"Invalid ticket status: {status}")
+
+    return status
+
+
+def validate_note_author(author):
+    if not isinstance(author, str) or not author.strip():
+        raise ValueError("Author cannot be empty.")
+
+    return author.strip()
+
+
+def validate_note_message(message):
+    if not isinstance(message, str):
+        raise ValueError("Message must be text.")
+
+    message = message.strip()
+
+    if not 5 <= len(message) <= 300:
+        raise ValueError(
+            "Message must contain 5 to 300 characters."
+        )
+
+    return message
 
 
 def calculate_priority(urgency, affected_users):
@@ -154,7 +196,9 @@ def validate_ticket(ticket):
     )
 
     if ticket["priority"] != expected_priority:
-        raise ValueError("Ticket priority does not match its inputs.")
+        raise ValueError(
+            "Ticket priority does not match its inputs."
+        )
 
     assigned_to = ticket["assigned_to"]
 
@@ -180,21 +224,8 @@ def validate_ticket(ticket):
 
         seen_note_ids.add(note["note_id"])
 
-        if (
-            not isinstance(note["author"], str)
-            or not note["author"].strip()
-        ):
-            raise ValueError("Note author cannot be empty.")
-
-        if not isinstance(note["message"], str):
-            raise ValueError("Note message must be text.")
-
-        message = note["message"].strip()
-
-        if not 5 <= len(message) <= 300:
-            raise ValueError(
-                "Note message must contain 5 to 300 characters."
-            )
+        validate_note_author(note["author"])
+        validate_note_message(note["message"])
 
 
 def validate_ticket_collection(tickets):
