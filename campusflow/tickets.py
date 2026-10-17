@@ -1,4 +1,5 @@
 from campusflow.validation import (
+    ALLOWED_TRANSITIONS,
     validate_title,
     validate_category,
     normalize_category,
@@ -6,6 +7,7 @@ from campusflow.validation import (
     validate_affected_users,
     validate_assignment,
     validate_ticket_id,
+    validate_status,
     calculate_priority,
 )
 
@@ -45,7 +47,6 @@ def create_ticket(
     urgency,
     affected_users,
 ):
-    # Validate everything before changing the collection.
     validate_title(title)
     validate_category(category)
     validate_urgency(urgency)
@@ -74,8 +75,8 @@ def create_ticket(
 
 
 def assign_ticket(tickets, ticket_id, staff):
-    # Validate the requested change before modifying the ticket.
     validate_assignment(staff)
+    staff = staff.strip()
 
     ticket = find_ticket(tickets, ticket_id)
 
@@ -84,35 +85,29 @@ def assign_ticket(tickets, ticket_id, staff):
             "Reopen the ticket before changing its assignment."
         )
 
-    ticket["assigned_to"] = staff.strip()
+    ticket["assigned_to"] = staff
 
     return ticket
 
 
 def change_status(tickets, ticket_id, new_status):
+    new_status = validate_status(new_status)
+
     ticket = find_ticket(tickets, ticket_id)
-
-    allowed_transitions = {
-        "open": {"in_progress"},
-        "in_progress": {"resolved"},
-        "resolved": {"open"},
-    }
-
-    if new_status not in allowed_transitions:
-        raise ValueError("Invalid ticket status.")
-
     current_status = ticket["status"]
 
-    if new_status not in allowed_transitions[current_status]:
+    allowed_statuses = ALLOWED_TRANSITIONS.get(
+        current_status,
+        set(),
+    )
+
+    if new_status not in allowed_statuses:
         raise ValueError(
             f"Cannot change status from {current_status} "
             f"to {new_status}."
         )
 
-    if (
-        new_status == "in_progress"
-        and not ticket["assigned_to"]
-    ):
+    if new_status == "in_progress" and not ticket["assigned_to"]:
         raise ValueError(
             "Assign the ticket before starting work."
         )
