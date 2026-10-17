@@ -83,6 +83,36 @@ Learning: I learned that automated tests can verify behavior, but I must also un
 
 Verification: The quiz tests passed in the full test suite.
 
+## Critical Evaluation: AI Suggestions and Verification
+
+### Situation
+While developing CampusFlow, I used AI to help understand
+ticket workflows, search filters, and error handling.
+
+### Critical Evaluation
+I learned that an AI-generated explanation or code change
+should not automatically be treated as correct. For example,
+when investigating the baseline startup failure, I compared
+the original CLI call with the storage function definition
+and checked the reported error. This allowed me to verify
+the missing path argument instead of relying only on an
+AI explanation.
+
+I also verified implementation behaviour through unit tests
+and terminal experiments. Passing tests provide useful
+evidence, but they do not prove that every requirement or
+edge case has been covered.
+
+### Final Decision
+I treated AI as a development aid rather than the final
+authority. I used source inspection, experiments, and tests
+to evaluate its suggestions before accepting a conclusion.
+
+### Learning
+I learned to question proposed solutions, verify claims
+independently, and distinguish tested behaviour from
+assumptions or untested possibilities.
+
 ## Learning Cycle 1: Python List Comprehensions
 
 ### Original Knowledge Gap

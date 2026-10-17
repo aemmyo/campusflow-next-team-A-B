@@ -4,7 +4,7 @@ CampusFlow is a command-line application for managing IT helpdesk tickets. It he
 
 ## Team Members and Responsibilities
 
-### Engineer A - Felix Gangese Terkula(first team)
+### Engineer A - Felix Gangese Terkula
 
 Responsibilities:
 - Ticket creation and validation
@@ -16,7 +16,7 @@ Main modules:
 - `campusflow/validation.py`
 - `campusflow/storage.py`
 
-### Engineer B - Onyilo
+### Engineer B - Ayegba Emmanuel Onyilo
 
 Responsibilities:
 - Ticket assignment and status workflow
@@ -64,40 +64,68 @@ The critical rule must be checked before the high rule.
 - Python 3
 - Python standard library
 
-## How to Run
+## How to Run/Usage
 
-From the project root directory, run:
+1. Run `python3 main.py` from the project root.
+2. Choose an option from the interactive menu.
+3. Follow the prompts to create, search, assign, or update tickets.
+4. Use the queue and reports options to review ticket information.
+5. Use the notes options to add or view ticket notes.
+6. Select the Engineering Understanding Check to test your knowledge.
+7. Select Save & Exit to save tickets and close the application.
 
-    python3 main.py
-
-Follow the menu instructions to use the application.
+The application validates user input and reports errors for invalid
+choices or unsupported operations.
 
 ## How to Run Tests
 
 Run the complete test suite:
 
-    python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -v
+
+## Test Status
+
+The test suite covers ticket creation, validation, storage, status
+workflows, assignment, queues, search, notes, reports, the engineering
+quiz, and command-line behaviour.
+
+Latest recorded result: 106 tests passed.
+
+To verify the current branch, run the test command above.
 
 ## Project Structure
 
-    campusflow-next-team-A-B/
-    ├── main.py
-    ├── campusflow/
-    │   ├── tickets.py
-    │   ├── validation.py
-    │   ├── storage.py
-    │   ├── workflow.py
-    │   ├── queue.py
-    │   ├── reports.py
-    │   ├── search.py
-    │   ├── notes.py
-    │   ├── quiz.py
-    │   └── quiz_questions.py
-    ├── tests/
-    └── docs/
-        ├── design-decisions.md
-        ├── ai-learning-log.md
-        └── ai-learning-log-engineer-b.md
+campusflow-next-team-A-B/
+├── main.py
+├── campusflow/
+│   ├── __init__.py
+│   ├── tickets.py
+│   ├── validation.py
+│   ├── storage.py
+│   ├── workflow.py
+│   ├── queue.py
+│   ├── reports.py
+│   ├── search.py
+│   ├── notes.py
+│   ├── quiz.py
+│   └── quiz_questions.py
+├── tests/
+│   ├── test_cli.py
+│   ├── test_notes.py
+│   ├── test_queue.py
+│   ├── test_quiz.py
+│   ├── test_reports.py
+│   ├── test_search.py
+│   ├── test_storage.py
+│   ├── test_tickets.py
+│   ├── test_validation.py
+│   └── test_workflow.py
+├── docs/
+│   ├── design-decisions.md
+│   ├── baseline-check.md
+│   ├── ai-learning-log.md
+│   └── ai-learning-log-engineer-b.md
+└── README.md
 
 ## Documentation
 
