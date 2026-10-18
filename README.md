@@ -2,7 +2,7 @@
 
 ## Team
 
-- Engineer A: Adama shalom. Ticket validation, workflow safety, notes, and storage.
+- Engineer A:Adama shalom. Ticket validation, workflow safety, notes, and storage.
 
 CampusFlow is a Python command-line helpdesk application for managing support tickets.
 
@@ -111,7 +111,7 @@ python3 -m unittest discover -s tests -v
 The latest verified test run completed with:
 
 ```text
-Ran 85 tests
+Ran 86 tests
 OK
 ```
 
