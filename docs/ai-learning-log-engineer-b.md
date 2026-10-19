@@ -90,7 +90,7 @@ values as well as normalized user input.
 
 **Verification:** I manually tested lowercase category input
 and ran the automated test suite. The latest recorded test run
-passed all 106 tests.
+passed all 111 tests.
 
 **Learning:** I learned that normalizing only the user's input
 is insufficient if the values being compared use a different
@@ -102,7 +102,7 @@ letter case.
 
 `python3 -m unittest discover -s tests -v`
 
-**Recorded result:** 106 tests passed.
+**Recorded result:** 111 tests passed.
 
 **Reflection:** AI helped me investigate errors and understand
 design choices, but its suggestions still needed to be checked.
