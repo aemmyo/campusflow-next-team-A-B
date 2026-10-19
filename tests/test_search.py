@@ -120,6 +120,22 @@ class TestTicketSearch(unittest.TestCase):
         with self.assertRaises(ValueError):
             search_tickets(self.tickets, priority="urgent")
 
+    def test_non_string_title_is_rejected(self):
+        with self.assertRaises(ValueError):
+            search_tickets(self.tickets, title=123)
+
+    def test_non_string_category_is_rejected(self):
+        with self.assertRaises(ValueError):
+            search_tickets(self.tickets, category=[])
+
+    def test_non_string_status_is_rejected(self):
+        with self.assertRaises(ValueError):
+            search_tickets(self.tickets, status=123)
+
+    def test_non_string_priority_is_rejected(self):
+        with self.assertRaises(ValueError):
+            search_tickets(self.tickets, priority=123)
+
     def test_search_does_not_modify_original_list(self):
         original_ids = [ticket["id"] for ticket in self.tickets]
 

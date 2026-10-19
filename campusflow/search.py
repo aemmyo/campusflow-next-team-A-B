@@ -21,11 +21,23 @@ def search_tickets(
     The original ticket list is not modified.
     """
 
+    # Validate the types of the search inputs.
+    filters = {
+        "title": title,
+        "category": category,
+        "status": status,
+        "priority": priority,
+    }
+
+    for name, value in filters.items():
+        if not isinstance(value, str):
+            raise ValueError(f"{name} must be a string.")
+
     # Normalize the search inputs.
-    title = title.strip().casefold() if title else ""
-    category = category.strip().lower() if category else ""
-    status = status.strip().lower() if status else ""
-    priority = priority.strip().lower() if priority else ""
+    title = title.strip().casefold()
+    category = category.strip().lower()
+    status = status.strip().lower()
+    priority = priority.strip().lower()
 
     # Validate category.
     if category and category not in {
