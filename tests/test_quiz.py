@@ -20,6 +20,10 @@ class TestQuiz(unittest.TestCase):
         answers = [question["answer"].lower() for question in QUESTIONS]
         self.assertEqual(calculate_score(answers), 6)
 
+    def test_invalid_answer_does_not_score(self):
+        answers = ["X"] * len(QUESTIONS)
+        self.assertEqual(calculate_score(answers), 0)
+
     def test_empty_answers_score_zero(self):
         self.assertEqual(calculate_score([]), 0)
 
