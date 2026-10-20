@@ -109,3 +109,26 @@ design choices, but its suggestions still needed to be checked.
 I used source inspection, terminal experiments, and automated
 tests to verify behaviour. I learned to investigate the cause
 of a problem rather than relying only on a suggested fix.
+
+## Engineering Understanding Check
+
+I completed the Engineering Understanding Check and scored 5 out of 6.
+
+I learned that a ticket must be assigned before it can move
+to `in_progress`, and that reports must handle empty ticket
+collections safely without division-by-zero errors.
+
+I also learned that searches using category and status filters
+must satisfy both conditions when the filters are combined
+with AND.
+
+The quiz reinforced the importance of rejecting duplicate
+ticket IDs without corrupting existing data and writing
+negative tests to ensure invalid inputs are rejected.
+
+My main correction was understanding the difference between
+AND and OR in search filters. AND requires both conditions
+to match, while OR allows either condition to match.
+
+I also improved my explanations of why empty reports and
+duplicate ticket IDs require safe handling.
