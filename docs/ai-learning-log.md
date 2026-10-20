@@ -1,4 +1,4 @@
-# AI Learning Log - Engineer A (Felix)
+# AI Learning Log - Engineer A
 
 ## Interaction 1: Initial Scaffolding
 Tool: ChatGPT / Claude
