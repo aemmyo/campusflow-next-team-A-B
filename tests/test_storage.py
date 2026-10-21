@@ -86,7 +86,10 @@ class TestStorage(unittest.TestCase):
 
         loaded_tickets = load_tickets(self.path)
 
-        self.assertEqual(next_ticket_id(loaded_tickets), "T003")
+        self.assertEqual(
+            next_ticket_id(loaded_tickets),
+            "T003",
+        )
 
     def test_next_note_id_after_loading(self):
         add_note(
@@ -168,7 +171,31 @@ class TestStorage(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_tickets(self.path)
 
-        self.assertEqual(self.tickets, existing_tickets)
+        self.assertEqual(
+            self.tickets,
+            existing_tickets,
+        )
+
+    def test_invalid_ticket_data_does_not_change_existing_collection(self):
+        existing_tickets = [
+            ticket.copy() for ticket in self.tickets
+        ]
+
+        invalid_ticket = self.ticket.copy()
+        invalid_ticket["status"] = "cancelled"
+
+        self.path.write_text(
+            json.dumps([invalid_ticket]),
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(ValueError):
+            load_tickets(self.path)
+
+        self.assertEqual(
+            self.tickets,
+            existing_tickets,
+        )
 
 
 if __name__ == "__main__":

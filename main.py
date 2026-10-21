@@ -164,18 +164,38 @@ def view_notes_menu(tickets):
     except ValueError as error:
         print(f"Error: {error}")
 
-        
-def main():
-    # Load saved tickets when the application starts.
+def load_saved_tickets():
+    """Load tickets safely when the application starts."""
     try:
         tickets = load_tickets(DATA_FILE)
+        print(f"Loaded {len(tickets)} saved tickets.")
+        return tickets
 
     except FileNotFoundError:
-        tickets = []
         print("No saved tickets found. Starting with an empty collection.")
+        return []
 
     except (ValueError, OSError) as error:
         print(f"Could not load tickets: {error}")
+        return None
+
+def save_and_exit(tickets):
+    """Save tickets and report whether saving succeeded."""
+    try:
+        save_tickets(tickets, DATA_FILE)
+        print(f"Saved {len(tickets)} tickets to {DATA_FILE}.")
+        print("Goodbye!")
+        return True
+
+    except (OSError, ValueError, TypeError) as error:
+        print(f"Could not save tickets: {error}")
+        print("Your application is still running.")
+        return False
+        
+def main():
+    tickets = load_saved_tickets()
+
+    if tickets is None:
         return
 
     print("=== CampusFlow Helpdesk ===")
@@ -305,12 +325,8 @@ def main():
             run_quiz()
 
         elif choice == "12":
-            save_tickets(tickets, DATA_FILE)
-            print(
-                f"Saved {len(tickets)} tickets to "
-                "data/tickets.json. Bye!"
-            )
-            break
+            if save_and_exit(tickets):
+                break
 
         else:
             print(

@@ -1,4 +1,4 @@
-# AI Learning Log - Engineer A (Felix)
+# AI Learning Log - Engineer A
 
 ## Interaction 1: Initial Scaffolding
 Tool: ChatGPT / Claude
@@ -208,10 +208,16 @@ These learning cycles helped me practise independent experimentation, source-cod
 
 ## Final Verification
 
+Earlier verification:
 Command: `python3 -m unittest discover -s tests -v`
 
 Result: 106 tests passed.
 
-Output: `Ran 106 tests in 0.107s — OK`
+Latest verification:
+Command: `python3 -m unittest discover -s tests -v`
 
-Reflection: Running the complete test suite helped me verify that the existing ticket workflow, queue, search, notes, reports, quiz, validation, storage, and CLI tests all passed together.
+Result: 112 tests passed.
+
+Output: `Ran 112 tests in 0.231s — OK`
+
+Reflection: Running the complete test suite helped me verify that the ticket workflow, queue, search, notes, reports, quiz, validation, storage, and CLI tests all passed together. The suite grew from 106 to 112 tests as additional tests were added, including a test confirming that invalid quiz answers earn no points.

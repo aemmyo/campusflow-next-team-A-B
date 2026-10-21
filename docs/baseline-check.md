@@ -1,102 +1,200 @@
-# CampusFlow Baseline Check
+# CampusFlow Next Baseline Check
 
-## 1. Baseline Information
+## 1. Project Overview
+
+CampusFlow Next is a Python command-line helpdesk application designed to manage support tickets.
+
+The application supports:
+- Ticket creation and validation
+- Ticket assignment and priority calculation
+- Ticket status changes and workflow safety
+- Follow-up notes
+- Ticket queues and priority sorting
+- Search and filtering
+- Reports and analytics
+- JSON storage and data persistence
+- The Engineering Understanding Check quiz
+
+This document records the baseline assessment, the problems identified, and the verification performed during development.
+
+## 2. Baseline Information
 
 - Baseline commit: `0519c17`
 - Commit message: Fix resolved ticket assignment safety
-- Baseline branch: main
+- Baseline branch: `main`
 - Environment: Python 3
-- Audit method: Extracted the baseline into `/tmp` using `git archive`, without changing the current feature branch.
+- Audit method: The baseline was extracted into `/tmp` using `git archive`, without changing the feature branch.
 
-## 2. Baseline Test Results
+## 3. Initial Baseline Test Results
 
-Command: `python3 -m unittest discover -s tests -v`
+Command:
+
+`python3 -m unittest discover -s tests -v`
 
 Observed results:
 - Tests run: 85
 - Passed: 85
 - Failures: 0
 - Errors: 0
-- Final result: OK
+- Final result: `OK`
 
 All 85 tests passed at baseline commit `0519c17`.
 
-## 3. CLI Startup Check
+However, passing the unit tests did not establish that the application could start successfully through its normal command-line entry point.
 
-Command: `python3 main.py`
+## 4. Baseline CLI Startup Check
 
-Expected: The application should display the interactive menu.
+Command:
 
-Actual: The application crashed before displaying the menu.
+`python3 main.py`
+
+Expected result:
+
+The application should start and display the interactive menu.
+
+Actual result:
+
+The application crashed before displaying the menu.
 
 Error:
+
 `TypeError: load_tickets() missing 1 required positional argument: 'path'`
 
-Cause: The baseline CLI called `load_tickets()` without an argument, but `campusflow/storage.py` defines `load_tickets(path)`.
+Cause:
 
-Impact: The CLI could not start through its normal entry point.
+The baseline CLI called `load_tickets()` without an argument, while `campusflow/storage.py` defines the function as `load_tickets(path)`.
 
-## 4. CLI Save-Call Inspection
+Impact:
 
-The baseline CLI called `save_tickets(tickets)`, but the storage function is defined as `save_tickets(tickets, path)`.
+The application could not start through its normal entry point.
 
-Finding: The CLI omitted the required path argument.
+## 5. Baseline Save-Function Inspection
 
-Limitation: This was confirmed by inspecting the source code. The save operation was not executed because the application crashed during startup.
+The baseline CLI called:
 
-## 5. Three Baseline Audit Checks
+`save_tickets(tickets)`
 
-### Check 1: Unit tests
+However, the storage function requires two arguments:
 
-- Initial state: Baseline commit `0519c17`.
+`save_tickets(tickets, path)`
+
+Finding:
+
+The CLI omitted the required storage path argument.
+
+Limitation:
+
+This issue was identified by inspecting the source code. The save operation was not executed because the application crashed during startup.
+
+## 6. Three Baseline Audit Checks
+
+### Check 1: Automated Tests
+
+- Initial state: Baseline commit `0519c17`
 - Command: `python3 -m unittest discover -s tests -v`
 - Expected: The baseline test suite should execute and report its results.
-- Actual: 85 tests passed with no failures or errors.
+- Actual: All 85 tests passed with no failures or errors.
 
-### Check 2: CLI startup
+### Check 2: CLI Startup
 
-- Initial state: Baseline commit `0519c17`.
+- Initial state: Baseline commit `0519c17`
 - Command: `python3 main.py`
 - Expected: The interactive menu should appear.
 - Actual: Startup failed because `load_tickets()` was called without its required path argument.
 
-### Check 3: Save-function compatibility
+### Check 3: Save-Function Compatibility
 
-- Initial state: Baseline source at commit `0519c17`.
+- Initial state: Baseline source at commit `0519c17`
 - Method: Inspected the CLI call and storage function definition.
 - Expected: The CLI should supply all required arguments.
-- Actual: The CLI passed only `tickets`, while the function requires `tickets` and `path`.
-- Limitation: This was source-code inspection, not a successful runtime test of the save operation.
+- Actual: The CLI supplied only `tickets`, while the function requires both `tickets` and `path`.
+- Limitation: This was a source-code inspection, not a successful runtime test of the save operation.
 
-## 6. Current-Branch Comparison
+## 7. Problems Identified and Improvements
 
-Current branch: `feat/integrate-search-insights`
+The project was reviewed for weaknesses in ticket safety, validation, workflow management, and data persistence.
 
-The current CLI calls:
-- `load_tickets(DATA_FILE)`
-- `save_tickets(tickets, DATA_FILE)`
+Important areas include:
 
-These calls supply the required path argument.
+- Validation of ticket assignments.
+- Prevention of reassignment while a ticket is resolved.
+- Enforcement of permitted status transitions.
+- Prevention of unassigned tickets entering `in_progress`.
+- Validation of follow-up notes.
+- Detection of duplicate ticket IDs and note IDs.
+- Rejection of invalid or corrupted JSON data.
+- Preservation of existing ticket data when loading fails.
+- Correct use of required arguments in storage function calls.
 
-Command: `python3 -m unittest tests.test_cli -v`
+These areas should be verified through the relevant implementation and automated tests.
 
-Observed results:
-- `test_invalid_menu_choice`: passed
-- `test_save_and_exit`: passed
-- Tests run: 2
+## 8. Current-Branch Verification
+
+During the merge work for the `feature/engineer-a-ticket-safety` branch, the following command was used to run the complete test suite:
+
+`python3 -m unittest discover -s tests -v`
+
+The observed result was:
+
+- Tests run: 111
+- Passed: 111
 - Failures: 0
 - Errors: 0
+- Final result: `OK`
 
-## 7. Remaining Audit Needs
+The `main.py` file also passed a Python syntax check using:
 
-The baseline test suite passed, but the CLI could not start because of the missing storage path argument.
+`python3 -m py_compile main.py`
 
-The current branch supplies the required path and has two passing CLI tests.
+These results establish that the application passed the reported test suite and syntax check at that point in development.
 
-The following areas need separate verification:
-- Whether the baseline accepts an invalid category such as `access`.
-- Whether search and filtering meet all assessment requirements.
-- Whether reports meet all required analytics and edge cases.
-- Whether both engineers have completed the required pull requests and peer reviews.
+The merge conflicts were resolved, and the integrated changes were
+committed and pushed to the `feature/engineer-a-ticket-safety` branch.
 
-Untested behavior is not recorded as a confirmed defect.
+After integration, the complete test suite was run again and all
+111 tests passed with no failures or errors.
+
+The recorded results confirm that the integrated version passed
+the automated tests. A passing test suite does not, by itself,
+prove that every possible application behaviour has been verified.
+
+## 9. Remaining Audit Needs
+
+The following areas require final verification against the assessment
+requirements:
+
+- Whether ticket categories and other inputs meet all validation rules.
+- Whether search and filtering satisfy the required behaviour and edge cases.
+- Whether reports cover the required analytics and edge cases.
+- Whether quiz scoring and invalid CLI choices meet all requirements.
+  Automated tests exist in `tests/test_quiz.py` and `tests/test_cli.py`.
+- Whether all required documentation and individual learning logs are complete.
+- Whether both engineers have completed their assigned pull requests
+  and peer reviews.
+
+The presence of automated tests does not, by itself, prove that every
+assessment requirement is satisfied. Remaining claims should be verified
+against the implementation, tests, and project instructions.
+
+Untested behaviour should not be reported as a confirmed defect.
+
+## 10. Lessons Learned
+
+The baseline assessment demonstrates the importance of:
+
+- Running tests and checking application startup separately.
+- Supplying all required function arguments.
+- Validating user input before changing application data.
+- Enforcing workflow rules in application logic.
+- Testing both successful operations and failure conditions.
+- Protecting existing data when loading new data fails.
+- Distinguishing observed results from assumptions.
+- Reviewing AI-generated suggestions and verifying them against the actual code.
+
+## 11. Conclusion
+
+At baseline commit `0519c17`, all 85 unit tests passed, but the CLI could not start because the storage function was called without its required path argument.
+
+During subsequent development, the complete test suite was reported to pass 111 tests, and `main.py` passed its syntax check.
+
+The test suite must be run again after resolving the remaining merge conflicts to confirm the final integrated version of CampusFlow Next.

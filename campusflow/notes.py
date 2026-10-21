@@ -1,5 +1,10 @@
 from campusflow.tickets import find_ticket
-from campusflow.validation import validate_note_id
+
+from campusflow.validation import (
+    validate_note_id,
+    validate_note_author,
+    validate_note_message,
+)
 
 
 def next_note_id(ticket):
@@ -18,24 +23,15 @@ def add_note(tickets, ticket_id, author, message):
     # Find the ticket before making any changes.
     ticket = find_ticket(tickets, ticket_id)
 
+    # Notes cannot be added to resolved tickets.
     if ticket["status"] not in {"open", "in_progress"}:
         raise ValueError(
             "Cannot add notes to a resolved ticket."
         )
 
-    if not isinstance(author, str) or not author.strip():
-        raise ValueError("Author cannot be empty.")
-
-    if not isinstance(message, str):
-        raise ValueError("Message must be text.")
-
-    author = author.strip()
-    message = message.strip()
-
-    if not 5 <= len(message) <= 300:
-        raise ValueError(
-            "Message must contain 5 to 300 characters."
-        )
+    # Use the shared validation functions.
+    author = validate_note_author(author)
+    message = validate_note_message(message)
 
     # Generate the ID only after validating the input.
     note = {
